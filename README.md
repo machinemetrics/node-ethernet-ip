@@ -82,8 +82,8 @@ PLC.connect("192.168.1.1", 0).then(async () => {
     console.log(tagList.tags)
     console.log(tagList.programs)
 
-    // Get tags from a specific program and add them to Taglist
-    await PLC.getControllerTagList(tagList, tagList.program[0])
+    // Get tags from first program and add them to Taglist
+    await PLC.getControllerTagList(tagList, tagList.programs[0])
 });
 ```
 
