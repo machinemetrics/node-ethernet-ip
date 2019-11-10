@@ -648,6 +648,10 @@ class Controller extends ENIP {
     forEach(callback) {
         this.state.subs.forEach(callback);
     }
+
+    getControllerTagList(tagList, program = null) {
+        return tagList.getControllerTags(this, program);
+    }
     // endregion
 
     // region Private Methods
@@ -859,6 +863,8 @@ class Controller extends ENIP {
         );
 
         const {
+            GET_INSTANCE_ATTRIBUTE_LIST,
+            GET_ATTRIBUTES,
             GET_ATTRIBUTE_SINGLE,
             GET_ATTRIBUTE_ALL,
             SET_ATTRIBUTE_SINGLE,
@@ -883,6 +889,12 @@ class Controller extends ENIP {
                 break;
             case FORWARD_OPEN:
                 this.emit("Forward Open", error, data);
+                break;
+            case GET_INSTANCE_ATTRIBUTE_LIST:
+                this.emit("Get Attributes", error, data);
+                break;
+            case GET_ATTRIBUTES:
+                this.emit("Get Instance Attribute List", error, data);
                 break;
             case GET_ATTRIBUTE_SINGLE:
                 this.emit("Get Attribute Single", error, data);

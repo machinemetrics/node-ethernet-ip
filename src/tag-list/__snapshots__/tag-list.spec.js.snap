@@ -1,0 +1,167 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Tag List Generate List Message Requests Method Generates Appropriate Output Instance 0 1`] = `
+Object {
+  "data": Array [
+    85,
+    3,
+    32,
+    107,
+    37,
+    0,
+    0,
+    0,
+    2,
+    0,
+    1,
+    0,
+    2,
+    0,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`Tag List Get Program Names Generates Appropriate Output 1`] = `
+Array [
+  "MainProgram",
+  "MainProgram2",
+]
+`;
+
+exports[`Tag List Parse Tag List Response Message Generates Appropriate Output 1`] = `
+Array [
+  Object {
+    "id": 3815,
+    "name": "HowLongCanYouMakeAnIntegerName",
+    "program": undefined,
+    "type": 196,
+  },
+  Object {
+    "id": 6353,
+    "name": "Timer2",
+    "program": undefined,
+    "type": 36739,
+  },
+  Object {
+    "id": 7162,
+    "name": "Map:LocalENB",
+    "program": undefined,
+    "type": 4201,
+  },
+  Object {
+    "id": 8255,
+    "name": "Integer6",
+    "program": undefined,
+    "type": 196,
+  },
+  Object {
+    "id": 9248,
+    "name": "Map:Controller",
+    "program": undefined,
+    "type": 4201,
+  },
+  Object {
+    "id": 9602,
+    "name": "AnalogOne",
+    "program": undefined,
+    "type": 202,
+  },
+  Object {
+    "id": 11241,
+    "name": "Integer3",
+    "program": undefined,
+    "type": 196,
+  },
+  Object {
+    "id": 12648,
+    "name": "BitOne",
+    "program": undefined,
+    "type": 193,
+  },
+  Object {
+    "id": 13748,
+    "name": "LongIntegerName1",
+    "program": undefined,
+    "type": 195,
+  },
+  Object {
+    "id": 14397,
+    "name": "Integer5",
+    "program": undefined,
+    "type": 196,
+  },
+  Object {
+    "id": 16174,
+    "name": "ThisIntegerNameIsEvenLongerThanTheFirst1",
+    "program": undefined,
+    "type": 196,
+  },
+  Object {
+    "id": 16805,
+    "name": "LongStringName1",
+    "program": undefined,
+    "type": 36814,
+  },
+  Object {
+    "id": 19059,
+    "name": "String2",
+    "program": undefined,
+    "type": 36814,
+  },
+  Object {
+    "id": 20716,
+    "name": "TheInteger",
+    "program": undefined,
+    "type": 195,
+  },
+  Object {
+    "id": 22820,
+    "name": "Program:MainProgram",
+    "program": undefined,
+    "type": 4200,
+  },
+  Object {
+    "id": 26297,
+    "name": "ThisIsAnotherMaximumLengthTagName1111111",
+    "program": undefined,
+    "type": 196,
+  },
+  Object {
+    "id": 31819,
+    "name": "Integer4",
+    "program": undefined,
+    "type": 196,
+  },
+  Object {
+    "id": 33528,
+    "name": "Program:MainProgram2",
+    "program": undefined,
+    "type": 4200,
+  },
+  Object {
+    "id": 35479,
+    "name": "BitTwo",
+    "program": undefined,
+    "type": 193,
+  },
+  Object {
+    "id": 39856,
+    "name": "String1",
+    "program": undefined,
+    "type": 36814,
+  },
+  Object {
+    "id": 46090,
+    "name": "String3",
+    "program": undefined,
+    "type": 36814,
+  },
+  Object {
+    "id": 46883,
+    "name": "Map:Local",
+    "program": undefined,
+    "type": 4201,
+  },
+]
+`;

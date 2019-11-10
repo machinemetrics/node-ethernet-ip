@@ -65,6 +65,29 @@ Controller.properties Object
 }
 ```
 
+#### Getting a List of Available Controller Tags
+
+```javascript
+const { Controller, TagList } = require("ethernet-ip");
+
+const PLC = new Controller();
+
+const tagList = new TagList();
+
+PLC.connect("192.168.1.1", 0).then(async () => {
+    
+    //Get controller tags
+    await PLC.getControllerTagList(tagList)
+
+    console.log(tagList.tags)
+    console.log(tagList.programs)
+
+    // Get tags from a specific program and add them to Taglist
+    await PLC.getControllerTagList(tagList, tagList.program[0])
+});
+```
+
+
 #### Set the Clock of the Controller
 
 **NOTE** `Controller.prototype.readWallClock` and `Controller.prototype.writeWallClock` are experimental features and may not be available on all controllers. 1756-L8 ControlLogix Controllers are currently the only PLCs supporting these features.
