@@ -864,7 +864,6 @@ class Controller extends ENIP {
 
         const {
             GET_INSTANCE_ATTRIBUTE_LIST,
-            GET_ATTRIBUTES,
             GET_ATTRIBUTE_SINGLE,
             GET_ATTRIBUTE_ALL,
             SET_ATTRIBUTE_SINGLE,
@@ -891,9 +890,6 @@ class Controller extends ENIP {
                 this.emit("Forward Open", error, data);
                 break;
             case GET_INSTANCE_ATTRIBUTE_LIST:
-                this.emit("Get Attributes", error, data);
-                break;
-            case GET_ATTRIBUTES:
                 this.emit("Get Instance Attribute List", error, data);
                 break;
             case GET_ATTRIBUTE_SINGLE:
