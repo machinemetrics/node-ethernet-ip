@@ -76,17 +76,33 @@ const tagList = new TagList();
 
 PLC.connect("192.168.1.1", 0).then(async () => {
     
-    //Get controller tags
+    // Get all controller tags and program tags
     await PLC.getControllerTagList(tagList)
 
+    // Displays all tags
     console.log(tagList.tags)
+
+    // Displays program names
     console.log(tagList.programs)
 
-    // Get tags from first program and add them to Taglist
-    await PLC.getControllerTagList(tagList, tagList.programs[0])
+    
 });
 ```
 
+TagList.tags[] Object
+```javascript
+ {
+    id: Number, // Instance ID
+    program: String, // Name of program scope of tag. {Null} is controller scope
+    type {
+        typeCode: Number, // Data type code
+        typeName: String, // Data type name
+        structure: Boolean, // TRUE if is structure.
+        arrayDims: Number, // Number of dimmensions of array. If not array = 0
+        reserved: Boolean // TRUE if is reserved
+    }
+}
+```
 
 #### Set the Clock of the Controller
 

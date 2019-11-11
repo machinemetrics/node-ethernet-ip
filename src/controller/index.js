@@ -650,10 +650,11 @@ class Controller extends ENIP {
     }
 
     async getControllerTagList(tagList, program = null) {
-        const getTagListErr = new Error(`TIMEOUT occurred while reading tag list`);
+        const getTagListErr = new Error("TIMEOUT occurred while reading tag list");
 
         // Wait for Response
         return await promiseTimeout(
+            tagList.getControllerTags(this, program),
             10000,
             getTagListErr
         );   
