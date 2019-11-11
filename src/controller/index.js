@@ -649,8 +649,14 @@ class Controller extends ENIP {
         this.state.subs.forEach(callback);
     }
 
-    getControllerTagList(tagList, program = null) {
-        return tagList.getControllerTags(this, program);
+    async getControllerTagList(tagList, program = null) {
+        const getTagListErr = new Error(`TIMEOUT occurred while reading tag list`);
+
+        // Wait for Response
+        return await promiseTimeout(
+            10000,
+            getTagListErr
+        );   
     }
     // endregion
 
