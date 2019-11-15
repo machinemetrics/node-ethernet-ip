@@ -738,7 +738,7 @@ class Controller extends ENIP {
                 // Full Tag Writing
                 this.on("Write Tag", (err, data) => {
                     if (err) reject(err);
-
+                    
                     tag.unstageWriteRequest();
                     resolve(data);
                 });
@@ -871,6 +871,7 @@ class Controller extends ENIP {
 
         const {
             GET_INSTANCE_ATTRIBUTE_LIST,
+            GET_ATTRIBUTES,
             GET_ATTRIBUTE_SINGLE,
             GET_ATTRIBUTE_ALL,
             SET_ATTRIBUTE_SINGLE,
@@ -898,6 +899,9 @@ class Controller extends ENIP {
                 break;
             case GET_INSTANCE_ATTRIBUTE_LIST:
                 this.emit("Get Instance Attribute List", error, data);
+                break;
+            case GET_ATTRIBUTES:
+                this.emit("Get Attributes", error, data);
                 break;
             case GET_ATTRIBUTE_SINGLE:
                 this.emit("Get Attribute Single", error, data);
@@ -996,6 +1000,7 @@ class Controller extends ENIP {
 
         const {
             GET_ATTRIBUTE_SINGLE,
+            GET_ATTRIBUTES,
             GET_ATTRIBUTE_ALL,
             GET_INSTANCE_ATTRIBUTE_LIST,
             SET_ATTRIBUTE_SINGLE,
@@ -1021,6 +1026,9 @@ class Controller extends ENIP {
                 break;
             case FORWARD_OPEN:
                 this.emit("Forward Open", error, data);
+                break;
+            case GET_ATTRIBUTES:
+                this.emit("Get Attributes", error, data);
                 break;
             case GET_ATTRIBUTE_SINGLE:
                 this.emit("Get Attribute Single", error, data);

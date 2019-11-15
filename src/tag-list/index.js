@@ -1,28 +1,12 @@
 const { CIP } = require("../enip");
-
-const ABtagTypes = {
-    TIMER: 0x0f83,
-    STRING: 0x0fce,
-    PROGRAM: 0x68,
-    TASK: 0x70,
-    ROUTINE: 0x6d,
-    MAP: 0x69
-};
-
-const getTypeCodeString = num => {
-    if (!Number.isInteger(num)) return null;
-    for (let type of Object.keys(ABtagTypes)) {
-        if (ABtagTypes[type] === num) return type;
-    }
-    return null;
-};
+const { Template } = require("../structure");
 
 class TagList {
     constructor () {
         this.tags = [];
+        this.templates = {};
     }
 
-  
     /**
      * Generates the CIP message to request a list of tags
      *
@@ -50,7 +34,6 @@ class TagList {
         const request = CIP.MessageRouter.build( CIP.MessageRouter.services.GET_INSTANCE_ATTRIBUTE_LIST, Buffer.concat(pathArray), requestData);
 
         return request;
-
     }
 
     /**
@@ -94,34 +77,45 @@ class TagList {
                 this.tags[lastTag] = tagObj;
             } else {
                 this.tags.push(tagObj);
-            }
-           
+            }          
         }
-
         return instanceID; // Return last instance id
+    }
+
+    _getTagTypeNames () {
+        for (const tag of this.tags) {
+            tag.type.typeName = CIP.DataTypes.getTypeCodeString(tag.type.code);
+            if(!tag.type.typeName && this.templates[tag.type.code]) {
+                tag.type.typeName = this.templates[tag.type.code]._name;
+            }
+        }
     }
 
     _parseTagType(tagType) {
 
-        const typeCode = tagType & 0x0fff;
+        let typeCode = null;
+        let sintPos = null;
+        if ((tagType & 0x00ff) === 0xc1) {
+            typeCode = 0x00c1;
+            sintPos = (tagType & 0x0f00) >> 8;
+        } else {
+            typeCode = tagType & 0x0fff;
+        }
+        
         const structure = !!(tagType & 0x8000);
         const reserved = !!(tagType & 0x1000);
         const arrayDims = (tagType & 0x6000) >> 13;
-
-        let typeName = CIP.DataTypes.getTypeCodeString(typeCode);
-
-        if (!typeName) {
-            typeName = getTypeCodeString(typeCode);
-        }
-
+        
         return {
-            typeCode: typeCode,
-            typeName: typeName,
+            code: typeCode,
+            sintPos: sintPos,
+            typeName: null,
             structure: structure,
             arrayDims: arrayDims,
             reserved: reserved
         };
     }
+
     /**
      * Parse CIP response into tag data
      *
@@ -162,10 +156,13 @@ class TagList {
                         // If program is not defined fetch tags for existing programs
                         if (!program) {
                             for (let prg of this.programs) {
-                                await this.getControllerTags(PLC, prg);
+                                await this.getControllerTags(PLC, prg).catch(reject);
                             }
-                        }
 
+                            await this._getAllTemplates(PLC).catch(reject); // Get All templates for structures
+                            
+                        } 
+                        this._getTagTypeNames();
                         resolve(this.tags);
                     }
                 });
@@ -184,6 +181,46 @@ class TagList {
     get programs() {
         return this.tags.filter(tag => tag.name.slice(0, 8) === "Program:").map(tag => {
             return tag.name.slice(8, tag.length);
+        });
+    }
+
+    getTag(tagName) {
+        return this.tags.find(tag => tag.name === tagName);
+    }
+
+    getTemplateByTag(tagName) {
+        const tag = this.tags.find(tag => tag.name === tagName);
+        return this.templates[tag.type.code];
+    }
+    _getAllTemplates (PLC) {
+        return new Promise (async (resolve, reject) => {
+            for (const tag of this.tags) {
+                if (tag.type.structure && !this.templates[tag.type.code]) {
+                    
+                    const template = new Template();
+                    await template.getTemplate(PLC, tag.type.code).catch(reject); 
+                    this.templates[tag.type.code] = template;                  
+                }
+            }
+
+            let foundTemplate = true;
+
+            while(foundTemplate) {
+                foundTemplate = false;
+
+                for (const temp in this.templates) {
+                    for (const member of this.templates[temp]._members) {
+                        if (member.type.structure && !this.templates[member.type.code]) {
+                            foundTemplate = true;
+                            const template = new Template();
+                            await template.getTemplate(PLC, member.type.code).catch(reject); 
+                            this.templates[member.type.code] = template; 
+                        }
+                    }
+                }
+            }
+
+            resolve();
         });
     }
   

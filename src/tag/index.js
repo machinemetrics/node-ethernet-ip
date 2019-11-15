@@ -236,7 +236,12 @@ class Tag extends EventEmitter {
      * @property {number|string|boolean|object} new value
      */
     set controller_value(newValue) {
-        if (newValue !== this.state.tag.controllerValue) {
+        let bufferCompare = false;
+        if(Buffer.isBuffer(newValue) && Buffer.isBuffer(this.state.tag.controllerValue)) {
+            bufferCompare = Buffer.compare(newValue, this.state.tag.controllerValue) === 0;     
+        }
+       
+        if ((newValue !== this.state.tag.controllerValue) && !bufferCompare) {
             const lastValue = this.state.tag.controllerValue;
             this.state.tag.controllerValue = newValue;
 
@@ -359,9 +364,15 @@ class Tag extends EventEmitter {
         // Set Type of Tag Read
         const type = data.readUInt16LE(0);
         this.state.tag.type = type;
-
-        if (this.state.tag.bitIndex !== null) this.parseReadMessageResponseValueForBitIndex(data);
-        else this.parseReadMessageResponseValueForAtomic(data);
+        
+        if (this.state.tag.bitIndex !== null) 
+        {
+            this.parseReadMessageResponseValueForBitIndex(data);
+        } else if(type === Types.STRUCT) {
+            this.controller_value = data.slice(4);
+        } else {
+            this.parseReadMessageResponseValueForAtomic(data);
+        }
     }
 
     /**
@@ -405,7 +416,7 @@ class Tag extends EventEmitter {
      * @memberof Tag
      */
     parseReadMessageResponseValueForAtomic(data) {
-        const { SINT, INT, DINT, REAL, BOOL } = Types;
+        const { SINT, INT, DINT, REAL, BOOL, LINT } = Types;
 
         // Read Tag Value
         /* eslint-disable indent */
@@ -424,6 +435,12 @@ class Tag extends EventEmitter {
                 break;
             case BOOL:
                 this.controller_value = data.readUInt8(2) !== 0;
+                break;
+            case LINT:
+                if(typeof data.writeBigInt64LE !== "function") {
+                    throw new Error("This version of Node.js does not support big integers. Upgrade to >= 12.0.0");
+                }
+                this.controller_value = data.readBigInt64LE(2);
                 break;
             default:
                 throw new Error(
@@ -513,7 +530,7 @@ class Tag extends EventEmitter {
      */
     generateWriteMessageRequestForAtomic(value, size) {
         const { tag } = this.state;
-        const { SINT, INT, DINT, REAL, BOOL } = Types;
+        const { SINT, INT, DINT, REAL, BOOL, LINT } = Types;
         // Build Message Router to Embed in UCMM
         let buf = Buffer.alloc(4);
         let valBuf = null;
@@ -550,6 +567,15 @@ class Tag extends EventEmitter {
                 valBuf = Buffer.alloc(1);
                 if (!tag.value) valBuf.writeInt8(0x00);
                 else valBuf.writeInt8(0x01);
+
+                buf = Buffer.concat([buf, valBuf]);
+                break;
+            case LINT:
+                valBuf = Buffer.alloc(8);
+                if(typeof valBuf.writeBigInt64LE !== "function") {
+                    throw new Error("This version of Node.js does not support big integers. Upgrade to >= 12.0.0");
+                }
+                valBuf.writeBigInt64LE(tag.value);
 
                 buf = Buffer.concat([buf, valBuf]);
                 break;
