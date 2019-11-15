@@ -64,10 +64,6 @@ class Structure extends Tag {
             return MessageRouter.build(WRITE_TAG, tag.path, Buffer.concat([buf, super.value]));  
         }
     }
-    
-    _parseWriteData (structObj, template) {
-
-    }
 
     _parseReadData (data, template) {
 
