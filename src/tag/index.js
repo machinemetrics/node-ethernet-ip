@@ -2,7 +2,7 @@ const { EventEmitter } = require("events");
 const crypto = require("crypto");
 const { CIP } = require("../enip");
 const { MessageRouter } = CIP;
-const { READ_TAG, WRITE_TAG, READ_MODIFY_WRITE_TAG } = MessageRouter.services;
+const { READ_TAG, WRITE_TAG, READ_MODIFY_WRITE_TAG, READ_TAG_FRAGMENTED } = MessageRouter.services;
 const { Types, getTypeCodeString, isValidTypeCode } = require("../enip/cip/data-types");
 const dateFormat = require("dateformat");
 
@@ -352,6 +352,28 @@ class Tag extends EventEmitter {
 
         // Build Current Message
         return MessageRouter.build(READ_TAG, tag.path, buf);
+    }
+
+    /**
+     * Generates Fragmented Read Tag Message
+     *
+     * @param {number} [offset=0]
+     * @param {number} [size=null]
+     * @returns {buffer} - Read Tag Message Service
+     * @memberof Tag
+     */
+    generateReadMessageRequestFrag(offset = 0, size = null) {
+        if (size) this.state.read_size = size;
+
+        const { tag } = this.state;
+
+        // Build Message Router to Embed in UCMM
+        let buf = Buffer.alloc(6);
+        buf.writeUInt16LE(this.state.read_size, 0);
+        buf.writeUInt32LE(offset, 2);
+
+        // Build Current Message
+        return MessageRouter.build(READ_TAG_FRAGMENTED, tag.path, buf);
     }
 
     /**

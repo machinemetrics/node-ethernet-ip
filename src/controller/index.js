@@ -701,9 +701,19 @@ class Controller extends ENIP {
         // Wait for Response
         const data = await promiseTimeout(
             new Promise((resolve, reject) => {
-                this.on("Read Tag", (err, data) => {
-                    if (err) reject(err);
-                    resolve(data);
+                this.on("Read Tag", async (err, data) => {
+                    if (err && err.generalStatusCode !== 6) {
+                        reject(err);
+                        return;
+                    }
+
+                    if (err && err.generalStatusCode === 6) {
+                        await this._readTagFragmented(tag, size).catch(reject);
+                        resolve(null);
+                    } else {
+                        resolve(data);
+                    }
+                    
                 });
             }),
             10000,
@@ -711,6 +721,57 @@ class Controller extends ENIP {
         );
 
         this.removeAllListeners("Read Tag");
+        
+        if (data) { tag.parseReadMessageResponse(data); }
+    }
+
+    /**
+     * Reads Data of Tag from Controller To Big To Fit In One Packet
+     *
+     * @param {Tag} tag - Tag Object to Write
+     * @param {number} [size=null]
+     * @returns {Promise}
+     * @memberof Controller
+     */
+    async _readTagFragmented(tag, size = null) {
+
+        let offset = 0;
+        let MR = tag.generateReadMessageRequestFrag(offset, size);
+        this.write_cip(MR);
+        
+        const typeSize = (tag.type === "STRUCT") ? 4 : 2;
+
+        const readTagErr = new Error(`TIMEOUT occurred while writing Reading Tag: ${tag.name}.`);
+
+        let retData = Buffer.alloc(0);
+        
+        const data = await promiseTimeout(
+            new Promise((resolve, reject) => {
+                this.on("Read Tag Fragmented", (err, data) => {
+                    if (err && err.generalStatusCode !== 6) {
+                        reject(err);
+                        return;
+                    }
+                    
+                    if (offset > 0) data = data.slice(typeSize);
+
+                    if (err && err.generalStatusCode === 6) {     
+                        retData = Buffer.concat([retData, data]);
+                        offset += data.length - typeSize;
+                        MR = tag.generateReadMessageRequestFrag(offset, size);
+                        this.write_cip(MR);
+                    } else {
+                        retData = Buffer.concat([retData, data]);
+                        resolve(retData);
+                    }
+                    
+                });
+            }),
+            10000,
+            readTagErr
+        );
+        
+        this.removeAllListeners("Read Tag Fragmented");
 
         tag.parseReadMessageResponse(data);
     }
@@ -725,6 +786,9 @@ class Controller extends ENIP {
      * @memberof Controller
      */
     async _writeTag(tag, value = null, size = 0x01) {
+        if (tag.state.tag.value.length > 480) {
+            return this._writeTagFragmented(tag, value, size);
+        }
         const MR = tag.generateWriteMessageRequest(value, size);
 
         this.write_cip(MR);
@@ -759,6 +823,53 @@ class Controller extends ENIP {
         this.removeAllListeners("Read Modify Write Tag");
     }
 
+    /**
+     * Writes value to Tag To Big To Fit In One Packet
+     *
+     * @param {Tag} tag - Tag Object to Write
+     * @param {number|boolean|object|string} [value=null] - If Omitted, Tag.value will be used
+     * @param {number} [size=0x01]
+     * @returns {Promise}
+     * @memberof Controller
+     */
+    async _writeTagFragmented(tag, value = null, size = 0x01) {
+
+        let offset = 0;
+        const maxPacket = 470;
+        let valueFragment = tag.state.tag.value.slice(offset, maxPacket);
+        let MR = tag.generateWriteMessageRequestFrag(offset, valueFragment, size);
+
+        this.write_cip(MR);
+        let numWrites = 0;
+        let totalWrites = Math.ceil(tag.state.tag.value.length / maxPacket);
+        const writeTagErr = new Error(`TIMEOUT occurred while writing Writing Tag: ${tag.name}.`);
+
+        // Wait for Response
+        await promiseTimeout(
+            new Promise((resolve, reject) => {
+
+                // Full Tag Writing
+                this.on("Write Tag Fragmented", (err, data) => {
+                    if (err) return reject(err);
+                    
+                    offset += maxPacket;
+                    numWrites ++;
+                    if (numWrites < totalWrites) {
+                        valueFragment = tag.state.tag.value.slice(offset, maxPacket  * totalWrites);
+                        MR = tag.generateWriteMessageRequestFrag(offset, valueFragment, size);
+                        this.write_cip(MR);
+                    } else {
+                        tag.unstageWriteRequest();
+                        return resolve(data);
+                    }            
+                });
+            }),
+            10000,
+            writeTagErr
+        );
+
+        this.removeAllListeners("Write Tag Fragmented");
+    }
     /**
      * Reads All Tags in the Passed Tag Group
      *
@@ -992,7 +1103,7 @@ class Controller extends ENIP {
         /* eslint-enable indent */
     }
 
-    _handleSendUnitDataReceived(sud) {
+    _handleSendUnitDataReceived(sud) {;
         let sudnew = sud[1].data.slice(2); // First 2 bytes are Connection sequence number
         const { service, generalStatusCode, extendedStatus, data } = CIP.MessageRouter.parse(
             sudnew

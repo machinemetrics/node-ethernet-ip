@@ -65,6 +65,7 @@ class Template {
                     string: CIP.DataTypes.getTypeCodeString(data.readUInt16LE(pointer + 2) & 0x0fff),
                     structure: !!(data.readUInt16LE(pointer + 2) & 0x8000),
                     reserved: !!(data.readUInt16LE(pointer + 2) & 0x1000),
+                    arrayDims: (data.readUInt16LE(pointer + 2) & 0x6000) >> 13
                 },
                 offset: data.readUInt32LE(pointer + 4)
             });
@@ -101,6 +102,7 @@ class Template {
     }
   
     _getTemplateAttributes(PLC, templateID) {
+        this.id = templateID;
         return new Promise((resolve, reject) => {
             const cipData = this._buildGetTemplateAttributesCIP(templateID);
             PLC.write_cip(cipData);

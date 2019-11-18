@@ -184,13 +184,32 @@ class TagList {
         });
     }
 
-    getTag(tagName) {
-        return this.tags.find(tag => tag.name === tagName);
+    getTag(tagName, program = null) {
+        return this.tags.find(tag => tag.name === tagName && tag.program === program);
     }
 
-    getTemplateByTag(tagName) {
-        const tag = this.tags.find(tag => tag.name === tagName);
-        return this.templates[tag.type.code];
+    getTemplateByTag(tagName, program = null) {
+
+        const tagArray = tagName.split(".");
+        const tag = this.tags.find(tag => tag.name === tagArray[0] && tag.program === program);
+
+        if (tag) {
+            let finalTemplate = this.templates[tag.type.code];
+            let tagArrayPointer = 1;
+            while(tagArrayPointer < tagArray.length) {
+                const nextTag = finalTemplate._members.find(member => member.name === tagArray[tagArrayPointer]);
+                if(nextTag) {
+                    finalTemplate = this.templates[nextTag.type.code];
+                } else {
+                    finalTemplate = null;
+                }
+                tagArrayPointer++;
+            } 
+            return finalTemplate;
+        } else {
+            return null;
+        }
+        
     }
     _getAllTemplates (PLC) {
         return new Promise (async (resolve, reject) => {

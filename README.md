@@ -326,7 +326,7 @@ PLC.connect("192.168.1.1", 0).then(async () => {
     const tagList = new TagList();
     await PLC.getControllerTagList(tagList);
 
-    const stringStructure = new Structure('String1', tagList.getTemplateByTag('String1'), {Optional Program Name});
+    const stringStructure = new Structure('String1', tagList, {Optional Program Name});
     await PLC.readTag(stringStructure);
 
     console.log(stringStructure.value);
