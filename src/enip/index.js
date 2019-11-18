@@ -234,6 +234,7 @@ class ENIP extends Socket {
             if(connected === true) {
                 if (connection.established === true) {
                     connection.seq_num += 1;
+                    if (connection.seq_num > 0xffff) connection.seq_num = 0;
                 }
                 else {
                     throw new Error ("Connected message request, but no connection established. Forgot forwardOpen?");
