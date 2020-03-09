@@ -3,6 +3,7 @@ const { MessageRouter } = CIP;
 const { WRITE_TAG, WRITE_TAG_FRAGMENTED } = MessageRouter.services;
 const Tag = require("../tag");
 const Template = require("./template");
+const {bufferToString, stringToBuffer} = require("../utilities");
 
 class Structure extends Tag {
     constructor (tagname, taglist, program = null, datatype = null, keepAlive = 0) {
@@ -16,13 +17,17 @@ class Structure extends Tag {
         if (!this._template) {
             return super.value;
         } else {
-            return this.parseValue(super.value);
+            if(super.value) {
+                return this.parseValue(super.value);
+            } else {
+                return null;
+            }
         }
     }
 
     parseValue (data) {
-        if (this._template._name === "ASCIISTRING82") {
-            return data.slice(4, 4 + data.readInt32LE()).toString();
+        if (this._template._name === "ASCIISTRING82" || this._template._name === "STRING") {
+            return bufferToString(data);
         } else {
             return this._parseReadData(data, this._template);
         }
@@ -32,13 +37,8 @@ class Structure extends Tag {
         if (!this._template) {
             super.value = newValue;
         } else {
-            if (this._template._name === "ASCIISTRING82") {
-                const lengthBuf = Buffer.alloc(4);
-                lengthBuf.writeUInt32LE(newValue.length);
-                const textBuf = Buffer.from(newValue, "utf8");
-                const paddBuf = Buffer.alloc(this._template._attributes.StructureSize - 4 - newValue.length, 0x00);
-
-                super.value = Buffer.concat([lengthBuf, textBuf, paddBuf]);
+            if (this._template._name === "ASCIISTRING82" || this._template._name === "STRING") {
+                super.value = stringToBuffer(newValue, this._template._attributes.StructureSize);
             } else {
                 super.value = this._parseWriteData (newValue, this._template);
             }

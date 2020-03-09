@@ -29,6 +29,7 @@
     ],
     "dependencies": {
         "dateformat": "^3.0.3",
+        "deep-equal": "^1.1.1",
         "int64-buffer": "^0.99.1007",
         "task-easy": "^0.2.0"
     },

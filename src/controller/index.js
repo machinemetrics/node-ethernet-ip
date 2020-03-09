@@ -704,7 +704,7 @@ class Controller extends ENIP {
                 this.on("Read Tag", async (err, data) => {
                     if (err && err.generalStatusCode !== 6) {
                         reject(err);
-                        return;
+                        return;                     
                     }
 
                     if (err && err.generalStatusCode === 6) {
@@ -712,17 +712,15 @@ class Controller extends ENIP {
                         resolve(null);
                     } else {
                         resolve(data);
-                    }
-                    
+                    }                    
                 });
             }),
             10000,
             readTagErr
         );
 
-        this.removeAllListeners("Read Tag");
-        
-        if (data) { tag.parseReadMessageResponse(data); }
+        this.removeAllListeners("Read Tag");    
+        if (data) tag.parseReadMessageResponse(data);       
     }
 
     /**
@@ -753,11 +751,13 @@ class Controller extends ENIP {
                         return;
                     }
                     
+                    const dataLength = data.length;
                     if (offset > 0) data = data.slice(typeSize);
+                    offset += dataLength - typeSize;
 
-                    if (err && err.generalStatusCode === 6) {     
+                    if (err && err.generalStatusCode === 6) {   
                         retData = Buffer.concat([retData, data]);
-                        offset += data.length - typeSize;
+
                         MR = tag.generateReadMessageRequestFrag(offset, size);
                         this.write_cip(MR);
                     } else {
@@ -792,7 +792,7 @@ class Controller extends ENIP {
         const MR = tag.generateWriteMessageRequest(value, size);
 
         this.write_cip(MR);
-
+        
         const writeTagErr = new Error(`TIMEOUT occurred while writing Writing Tag: ${tag.name}.`);
 
         // Wait for Response
@@ -809,8 +809,9 @@ class Controller extends ENIP {
 
                 // Masked Bit Writing
                 this.on("Read Modify Write Tag", (err, data) => {
+                    
                     if (err) reject(err);
-
+                    
                     tag.unstageWriteRequest();
                     resolve(data);
                 });
@@ -855,7 +856,7 @@ class Controller extends ENIP {
                     offset += maxPacket;
                     numWrites ++;
                     if (numWrites < totalWrites) {
-                        valueFragment = tag.state.tag.value.slice(offset, maxPacket  * totalWrites);
+                        valueFragment = tag.state.tag.value.slice(offset, maxPacket + offset);
                         MR = tag.generateWriteMessageRequestFrag(offset, valueFragment, size);
                         this.write_cip(MR);
                     } else {
@@ -885,13 +886,17 @@ class Controller extends ENIP {
         // Send Each Multi Service Message
         for (let msg of messages) {
             this.write_cip(msg.data);
-
             // Wait for Controller to Respond
             const data = await promiseTimeout(
                 new Promise((resolve, reject) => {
-                    this.on("Multiple Service Packet", (err, data) => {
-                        if (err) reject(err);
-
+                    this.on("Multiple Service Packet", async (err, data) => {
+                        if (err && err.generalStatusCode !== 6) reject(err);
+                        for (let i = 0; i < data.length; i++) {
+                            if (data[i].generalStatusCode === 6) {
+                                await this._readTagFragmented(group.state.tags[msg.tag_ids[i]]).catch(reject);
+                            }
+                        }
+                        
                         resolve(data);
                     });
                 }),
@@ -916,28 +921,31 @@ class Controller extends ENIP {
     async _writeTagGroup(group) {
         const messages = group.generateWriteMessageRequests();
 
-        const writeTagGroupErr = new Error("TIMEOUT occurred while writing Reading Tag Group.");
+        const writeTagGroupErr = new Error("TIMEOUT occurred while Writing Tag Group.");
 
         // Send Each Multi Service Message
         for (let msg of messages) {
-            this.write_cip(msg.data);
+            if (msg.data) {
+                this.write_cip(msg.data);
+                
+                // Wait for Controller to Respond
+                const data = await promiseTimeout(
+                    new Promise((resolve, reject) => {
+                        this.on("Multiple Service Packet", (err, data) => {
+                            if (err) reject(err);
+                            resolve(data);
+                        });
+                    }),
+                    10000,
+                    writeTagGroupErr
+                );
 
-            // Wait for Controller to Respond
-            const data = await promiseTimeout(
-                new Promise((resolve, reject) => {
-                    this.on("Multiple Service Packet", (err, data) => {
-                        if (err) reject(err);
+                this.removeAllListeners("Multiple Service Packet");
 
-                        resolve(data);
-                    });
-                }),
-                10000,
-                writeTagGroupErr
-            );
-
-            this.removeAllListeners("Multiple Service Packet");
-
-            group.parseWriteMessageRequests(data, msg.tag_ids);
+                group.parseWriteMessageRequests(data, msg.tag_ids);
+            } else {
+                await this.writeTag(msg.tag).catch(e => {throw e;});
+            }
         }
     }
     // endregion
@@ -1041,7 +1049,7 @@ class Controller extends ENIP {
                 break;
             case MULTIPLE_SERVICE_PACKET: {
                 // If service errored then propogate error
-                if (error) {
+                if (error && error.generalStatusCode !== 30) {
                     this.emit("Multiple Service Packet", error, data);
                     break;
                 }
@@ -1066,7 +1074,7 @@ class Controller extends ENIP {
                     // Parse Message Data
                     const msgData = CIP.MessageRouter.parse(buf);
 
-                    if (msgData.generalStatusCode !== 0) {
+                    if (msgData.generalStatusCode !== 0 && error.generalStatusCode !== 30) {
                         error = {
                             generalStatusCode: msgData.generalStatusCode,
                             extendedStatus: msgData.extendedStatus
@@ -1103,7 +1111,7 @@ class Controller extends ENIP {
         /* eslint-enable indent */
     }
 
-    _handleSendUnitDataReceived(sud) {;
+    _handleSendUnitDataReceived(sud) {
         let sudnew = sud[1].data.slice(2); // First 2 bytes are Connection sequence number
         const { service, generalStatusCode, extendedStatus, data } = CIP.MessageRouter.parse(
             sudnew
@@ -1171,7 +1179,7 @@ class Controller extends ENIP {
                 break;
             case MULTIPLE_SERVICE_PACKET: {
                 // If service errored then propogate error
-                if (error) {
+                if (error && error.generalStatusCode !== 30) {
                     this.emit("Multiple Service Packet", error, data);
                     break;
                 }

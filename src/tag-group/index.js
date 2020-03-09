@@ -3,6 +3,7 @@ const { EventEmitter } = require("events");
 const { LOGICAL } = CIP.EPATH.segments;
 const { MessageRouter } = CIP;
 const { MULTIPLE_SERVICE_PACKET } = MessageRouter.services;
+const equals = require("deep-equal");
 
 class TagGroup extends EventEmitter {
     constructor() {
@@ -146,7 +147,8 @@ class TagGroup extends EventEmitter {
      */
     parseReadMessageResponses(responses, ids) {
         for (let i = 0; i < ids.length; i++) {
-            this.state.tags[ids[i]].parseReadMessageResponse(responses[i].data);
+            if(responses[i].generalStatusCode === 0)
+                this.state.tags[ids[i]].parseReadMessageResponse(responses[i].data);
         }
     }
 
@@ -170,36 +172,40 @@ class TagGroup extends EventEmitter {
         for (let key of Object.keys(tags)) {
             const tag = tags[key];
 
-            if (tag.value !== null && tag.value !== tag.controller_value) {
+            if (tag.value !== null && !equals(tag.state.tag.value, tag.controller_value)) {
                 // Build Current Message
                 let msg = tag.generateWriteMessageRequest();
+                
+                if (tag.type !== "STRUCT") {
+                    messageLength += msg.length + 2;
 
-                messageLength += msg.length + 2;
+                    tagIds.push(tag.instance_id);
+                    msgArr.push(msg);
 
-                tagIds.push(tag.instance_id);
-                msgArr.push(msg);
+                    // If Current Message Length is > 350 Bytes then Assemble Message and Move to Next Message
+                    if (messageLength >= 350) {
+                        let buf = Buffer.alloc(2 + 2 * msgArr.length);
+                        buf.writeUInt16LE(msgArr.length, 0);
 
-                // If Current Message Length is > 350 Bytes then Assemble Message and Move to Next Message
-                if (messageLength >= 300) {
-                    let buf = Buffer.alloc(2 + 2 * msgArr.length);
-                    buf.writeUInt16LE(msgArr.length, 0);
+                        let ptr = 2;
+                        let offset = buf.length;
 
-                    let ptr = 2;
-                    let offset = buf.length;
+                        for (let i = 0; i < msgArr.length; i++) {
+                            buf.writeUInt16LE(offset, ptr);
+                            ptr += 2;
+                            offset += msgArr[i].length;
+                        }
 
-                    for (let i = 0; i < msgArr.length; i++) {
-                        buf.writeUInt16LE(offset, ptr);
-                        ptr += 2;
-                        offset += msgArr[i].length;
+                        buf = Buffer.concat([buf, ...msgArr]);
+                        buf = MessageRouter.build(MULTIPLE_SERVICE_PACKET, this.state.path, buf);
+
+                        messages.push({ data: buf, tag_ids: tagIds });
+                        messageLength = 0;
+                        msgArr = [];
+                        tagIds = [];
                     }
-
-                    buf = Buffer.concat([buf, ...msgArr]);
-                    buf = MessageRouter.build(MULTIPLE_SERVICE_PACKET, this.state.path, buf);
-
-                    messages.push({ data: buf, tag_ids: tagIds });
-                    messageLength = 0;
-                    msgArr = [];
-                    tagIds = [];
+                } else {
+                    messages.push({data: null, tag: tag});
                 }
             }
         }
