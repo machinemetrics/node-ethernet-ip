@@ -604,33 +604,63 @@ class Tag extends EventEmitter {
         // Build Message Router to Embed in UCMM
         let buf = Buffer.alloc(4);
         let valBuf = null;
+
         buf.writeUInt16LE(tag.type, 0);
-        buf.writeUInt16LE(size, 2);
+
+        if (Array.isArray(value)) {
+            buf.writeUInt16LE(value.length, 2);
+        } else {
+            buf.writeUInt16LE(size, 2);
+        }
 
         /* eslint-disable indent */
         switch (tag.type) {
             case SINT:
-                valBuf = Buffer.alloc(1);
-                valBuf.writeInt8(tag.value);
-
+                if (Array.isArray(value)) {
+                    valBuf = Buffer.alloc(value.length)
+                    for (var i = 0; i < value.length; i++) {
+                        valBuf.writeUInt8(value[i], i)
+                    }
+                } else {
+                    valBuf = Buffer.alloc(1);
+                    valBuf.writeInt8(tag.value);                    
+                }
                 buf = Buffer.concat([buf, valBuf]);
                 break;
             case INT:
-                valBuf = Buffer.alloc(2);
-                valBuf.writeInt16LE(tag.value);
-
+                if (Array.isArray(value)) {
+                    valBuf = Buffer.alloc(2 * value.length)
+                    for (var i = 0; i < value.length; i++) {
+                        valBuf.writeInt16LE(value[i], i * 2)
+                    }
+                } else {
+                    valBuf = Buffer.alloc(2);
+                    valBuf.writeInt16LE(tag.value);                    
+                }
                 buf = Buffer.concat([buf, valBuf]);
                 break;
             case DINT:
-                valBuf = Buffer.alloc(4);
-                valBuf.writeInt32LE(tag.value);
-
-                buf = Buffer.concat([buf, valBuf]);
+                if (Array.isArray(value)) {
+                    valBuf = Buffer.alloc(4 * value.length)
+                    for (var i = 0; i < value.length; i++) {
+                        valBuf.writeUInt32LE(value[i], i * 4)
+                    }
+                } else {
+                    valBuf = Buffer.alloc(4);
+                    valBuf.writeInt32LE(tag.value);                    
+                }
+                buf = Buffer.concat([buf, valBuf]);               
                 break;
             case REAL:
-                valBuf = Buffer.alloc(4);
-                valBuf.writeFloatLE(tag.value);
-
+                if (Array.isArray(value)) {
+                    valBuf = Buffer.alloc(4 * value.length)
+                    for (var i = 0; i < value.length; i++) {
+                        valBuf.writeFloatLE(value[i], i * 4)
+                    }
+                } else {
+                    valBuf = Buffer.alloc(4);
+                    valBuf.writeFloatLE(tag.value);                    
+                }
                 buf = Buffer.concat([buf, valBuf]);
                 break;
             case BOOL:
@@ -641,12 +671,19 @@ class Tag extends EventEmitter {
                 buf = Buffer.concat([buf, valBuf]);
                 break;
             case LINT:
-                valBuf = Buffer.alloc(8);
+                valBuf = Buffer.alloc(8)
                 if(typeof valBuf.writeBigInt64LE !== "function") {
                     throw new Error("This version of Node.js does not support big integers. Upgrade to >= 12.0.0");
                 }
-                valBuf.writeBigInt64LE(tag.value);
-
+                if (Array.isArray(value)) {
+                    valBuf = Buffer.alloc(8 * value.length)
+                    for (var i = 0; i < value.length; i++) {
+                        valBuf.writeBigInt64LE(value[i], i * 8)
+                    }
+                } else {
+                    valBuf = Buffer.alloc(8);
+                    valBuf.writeBigInt64LE(tag.value);                    
+                }
                 buf = Buffer.concat([buf, valBuf]);
                 break;
             default:
