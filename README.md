@@ -1,16 +1,5 @@
 <p align="center"><img width="280" src="https://i.imgur.com/HNxhZox.png" alt="Vue logo"></p>
 
-<div align="center">
-  <p><a href="https://www.npmjs.com/package/ethernet-ip"><img src="https://img.shields.io/npm/v/ethernet-ip.svg?style=flat-square" alt="npm" /></a>
-  <a href="https://gitter.im/node-ethernet-ip/Lobby"><img src="https://img.shields.io/gitter/room/node-ethernet-ip/nw.js.svg?style=flat-square" alt="Gitter" /></a>
-  <a href="https://github.com/cmseaton42/node-ethernet-ip/blob/master/LICENSE"><img src="https://img.shields.io/github/license/cmseaton42/node-ethernet-ip.svg?style=flat-square" alt="license" /></a>
-  <img src="https://img.shields.io/travis/cmseaton42/node-ethernet-ip.svg?style=flat-square" alt="Travis" />
-  <img src="https://img.shields.io/coveralls/github/cmseaton42/node-ethernet-ip.svg?style=flat-square" alt="Coveralls github" />
-  <img src="https://snyk.io/test/github/cmseaton42/node-ethernet-ip/badge.svg?targetFile=package.json" alt="Known Vulnerabilities" data-canonical-src="https://snyk.io/test/github/cmseaton42/node-ethernet-ip?targetFile=package.json" style="max-width:100%;">
-  <a href="https://github.com/cmseaton42/node-ethernet-ip"><img src="https://img.shields.io/github/stars/cmseaton42/node-ethernet-ip.svg?&amp;style=social&amp;logo=github&amp;label=Stars" alt="GitHub stars" /></a></p>
-</div>
-
-
 # Node Ethernet/IP
 
 A simple and lightweight node based API for interfacing with Rockwell Control/CompactLogix PLCs.
@@ -24,7 +13,7 @@ latest version of [NodeJS](https://nodejs.org/en/)
 Install with npm
 
 ```
-npm install ethernet-ip --save
+npm install SerafinTech/node-ethernet-ip --save
 ```
 ## The API
 
@@ -319,8 +308,6 @@ const { Controller, Tag, TagList, Structure } = require("ethernet-ip");
 
 const PLC = new Controller();
 
-const tag = new Tag('BigInteger1');
-
 PLC.connect("192.168.1.1", 0).then(async () => {
     
     const tagList = new TagList();
@@ -382,7 +369,8 @@ PLC.forEach(tag => {
 
 ## Contributers
 
-* **Canaan Seaton** - *Owner* - [GitHub Profile](https://github.com/cmseaton42) - [Personal Website](http://www.canaanseaton.com/)
+* **Jason Serafin** - *Owner* - [GitHub Profile](https://github.com/SerafinTech)
+* **Canaan Seaton** - *Forked From Owner* - [GitHub Profile](https://github.com/cmseaton42) - [Personal Website](http://www.canaanseaton.com/)
 * **Patrick McDonagh** - *Collaborator* - [GitHub Profile](https://github.com/patrickjmcd)
 * **Jeremy Henson** - *Collaborator* - [Github Profile](https://github.com/jhenson29)
   
@@ -390,8 +378,8 @@ PLC.forEach(tag => {
 
 * [Node Red](https://github.com/netsmarttech/node-red-contrib-cip-ethernet-ip#readme)
 
-Wanna *become* a contributor? [Here's](https://github.com/cmseaton42/node-ethernet-ip/blob/master/CONTRIBUTING.md) how!
+Wanna *become* a contributor? [Here's](https://github.com/SerafinTech/node-ethernet-ip/blob/master/CONTRIBUTING.md) how!
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENCE](https://github.com/cmseaton42/node-ethernet-ip/blob/master/LICENSE) file for details
+This project is licensed under the MIT License - see the [LICENCE](https://github.com/SerafinTech/node-ethernet-ip/blob/master/LICENSE) file for details

@@ -191,7 +191,7 @@ class TagList {
     getTemplateByTag(tagName, program = null) {
 
         const tagArray = tagName.split(".");
-        const tag = this.tags.find(tag => tag.name === tagArray[0] && tag.program === program);
+        const tag = this.tags.find(tag => tag.name.toLowerCase() === tagArray[0].toLowerCase() && tag.program === program);
 
         if (tag) {
             let finalTemplate = this.templates[tag.type.code];
