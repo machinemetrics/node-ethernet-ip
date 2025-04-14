@@ -34,6 +34,7 @@ class Controller extends ENIP {
             subs: new TagGroup(compare),
             scanning: false,
             scan_rate: 200, //ms,
+            rpi: 10,
             connectedMessaging,
         };
 
@@ -63,6 +64,25 @@ class Controller extends ENIP {
     set scan_rate(rate) {
         if (typeof rate !== "number") throw new Error("scan_rate must be of Type <number>");
         this.state.scan_rate = Math.trunc(rate);
+    }
+
+    /**
+     * Returns the Rpi
+     *
+     * @returns rpi setpoint in ms
+     */
+    get rpi() {
+        return this.state.rpi;
+    }
+
+    /**
+     * Sets the Rpi
+     *
+     */
+    set rpi(sp) {
+        if (typeof sp !== "number") throw new Error("Rpi must be of Type <number>");
+        if (sp < 8) throw new Error("Rpi a minimum of 8ms");
+        this.state.rpi = Math.trunc(sp);
     }
 
     /**
@@ -193,7 +213,7 @@ class Controller extends ENIP {
         // Create connection parameters
         const params = CIP.ConnectionManager.build_connectionParameters(owner["Exclusive"], connectionType["PointToPoint"],priority["Low"],fixedVar["Variable"],500);
 
-        const forwardOpenData = CIP.ConnectionManager.build_forwardOpen(10000,params);
+        const forwardOpenData = CIP.ConnectionManager.build_forwardOpen(this.state.rpi * 3000, params);
 
         // Build MR Path in order to send the message to the CPU
         const mrPath = Buffer.concat([
