@@ -30,8 +30,9 @@ class TagList {
             pathArray.push( LOGICAL.build(LOGICAL.types.InstanceID, instanceID));
         }
 
-        const requestData = Buffer.from([0x02, 0x00, 0x01, 0x00, 0x02, 0x00]); // 2 Attributes - Attribute 1 and Attribute 2
-        const request = CIP.MessageRouter.build( CIP.MessageRouter.services.GET_INSTANCE_ATTRIBUTE_LIST, Buffer.concat(pathArray), requestData);
+        const attributeCount = Buffer.from([0x04, 0x00]); 
+        const attributeList = Buffer.from([0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x08, 0x00]); // Attributes 1, 2, 3, 8
+        const request = CIP.MessageRouter.build( CIP.MessageRouter.services.GET_INSTANCE_ATTRIBUTE_LIST, Buffer.concat(pathArray), Buffer.concat([attributeCount, attributeList]));
 
         return request;
     }
@@ -62,6 +63,16 @@ class TagList {
             const tagType = data.readUInt16LE(pointer); // Parse tag type
             pointer += 2;
 
+            const symbolAddress = data.readUInt32LE(pointer); // Parse symbol address
+            pointer += 4;
+
+            const dim1 = data.readUInt32LE(pointer);
+            pointer += 4;
+            const dim2 = data.readUInt32LE(pointer);
+            pointer += 4;
+            const dim3 = data.readUInt32LE(pointer);
+            pointer += 4;
+
             const lastTag = this.tags.findIndex(tag => {
                 return (tag.id === instanceID && tag.program === program); 
             });
@@ -70,6 +81,8 @@ class TagList {
                 id: instanceID,
                 name: tagName,
                 type: this._parseTagType(tagType),
+                symbolAddress,
+                dimensions: [dim1, dim2, dim3],
                 program: program 
             };
             

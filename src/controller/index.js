@@ -35,6 +35,7 @@ class Controller extends ENIP {
             scanning: false,
             scan_rate: 200, //ms,
             rpi: 10,
+            fwdOpenSerial: 0,
             connectedMessaging,
         };
 
@@ -212,8 +213,8 @@ class Controller extends ENIP {
 
         // Create connection parameters
         const params = CIP.ConnectionManager.build_connectionParameters(owner["Exclusive"], connectionType["PointToPoint"],priority["Low"],fixedVar["Variable"],500);
-
-        const forwardOpenData = CIP.ConnectionManager.build_forwardOpen(this.state.rpi * 1000, params);
+        this.state.fwdOpenSerial = Math.floor(Math.random() * 32767);
+        const forwardOpenData = CIP.ConnectionManager.build_forwardOpen(this.state.rpi * 1000, params, 1000, 32, this.state.fwdOpenSerial);
 
         // Build MR Path in order to send the message to the CPU
         const mrPath = Buffer.concat([
@@ -284,7 +285,7 @@ class Controller extends ENIP {
         // Message Router to Embed in UCMM
         const MR = CIP.MessageRouter.build(FORWARD_CLOSE, cmPath, []);
 
-        const forwardCloseData = CIP.ConnectionManager.build_forwardClose();
+        const forwardCloseData = CIP.ConnectionManager.build_forwardClose(1000, 0x3333, 0x1337, this.state.fwdOpenSerial);
 
         // Build MR Path in order to send the message to the CPU
         const mrPath = Buffer.concat([
